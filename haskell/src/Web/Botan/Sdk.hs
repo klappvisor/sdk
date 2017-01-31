@@ -9,7 +9,6 @@ module Web.Botan.Sdk
     , shortenUrl
     ) where
 
-import           Control.Monad.Trans.Except (ExceptT, runExceptT)
 import           Data.Proxy
 import           Data.Text (Text)
 import           Network.HTTP.Client (Manager)
@@ -29,10 +28,10 @@ data Result = Result
 
 -- | Tracks Messages
 track :: Text -> Text -> A.Value -> Text -> Manager -> IO (Either ServantError Result)
-track token userId message eventName manager = runExceptT $ track_ (Just token) (Just userId) (Just eventName) message manager botanBaseUrl
+track token userId message eventName manager = runClientM (track_ (Just token) (Just userId) (Just eventName) message) (ClientEnv manager botanBaseUrl)
 
 shortenUrl :: Text -> Text -> Text -> Manager -> IO (Either ServantError Text)
-shortenUrl token url userId manager = runExceptT $ shortenUrl_ (Just token) (Just url) (Just userId) manager botanBaseUrl
+shortenUrl token url userId manager = runClientM (shortenUrl_ (Just token) (Just url) (Just userId)) (ClientEnv manager botanBaseUrl)
 
 type BotanAPI =
   "track"
@@ -50,7 +49,7 @@ type BotanAPI =
 api :: Proxy BotanAPI
 api = Proxy
 
-track_ :: Maybe Text -> Maybe Text -> Maybe Text -> A.Value -> Manager -> BaseUrl -> ExceptT ServantError IO Result
-shortenUrl_ :: Maybe Text -> Maybe Text -> Maybe Text -> Manager -> BaseUrl -> ExceptT ServantError IO Text
+track_ :: Maybe Text -> Maybe Text -> Maybe Text -> A.Value -> ClientM Result
+shortenUrl_ :: Maybe Text -> Maybe Text -> Maybe Text -> ClientM Text
 track_
   :<|> shortenUrl_ = client api
